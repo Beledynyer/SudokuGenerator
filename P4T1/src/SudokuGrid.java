@@ -2,18 +2,21 @@ import java.util.*;
 import java.util.stream.*;
 
 class SudokuGrid {
-    private final int[][] grid;
+    private final List<List<Integer>> grid;
     private static final int SIZE = 9;
 
     public SudokuGrid() {
-        grid = new int[SIZE][SIZE];
+        grid = new ArrayList<>(SIZE);
+        for (int i = 0; i < SIZE; i++) {
+            grid.add(new ArrayList<>(Collections.nCopies(SIZE, 0)));
+        }
     }
 
     /**
      * method to clear all box values
      */
     public void clearAllBoxes() {
-        Arrays.stream(grid).forEach(row -> Arrays.fill(row, 0));
+        grid.forEach(row -> Collections.fill(row, 0));
     }
 
     /**
@@ -23,7 +26,7 @@ class SudokuGrid {
      * @param value
      */
     public void setBoxValue(int row, int col, int value) {
-        grid[row][col] = value;
+        grid.get(row).set(col, value);
     }
 
     /**
@@ -33,7 +36,7 @@ class SudokuGrid {
      * @return
      */
     public int getBoxValue(int row, int col) {
-        return grid[row][col];
+        return grid.get(row).get(col);
     }
 
     /**
@@ -45,10 +48,8 @@ class SudokuGrid {
      * and the reason(s) for invalidity.
      */
     public ValidationResult isValidPlacement(int row, int col, int value) {
-        boolean rowConflict = IntStream.range(0, SIZE)
-                .anyMatch(i -> grid[row][i] == value);
-        boolean colConflict = IntStream.range(0, SIZE)
-                .anyMatch(i -> grid[i][col] == value);
+        boolean rowConflict = grid.get(row).contains(value);
+        boolean colConflict = grid.stream().anyMatch(r -> r.get(col) == value);
         boolean blockConflict = isBlockConflict(row, col, value);
 
         if (!rowConflict && !colConflict && !blockConflict) {
@@ -72,12 +73,11 @@ class SudokuGrid {
         int blockCol = col - col % 3;
         return IntStream.range(blockRow, blockRow + 3)
                 .anyMatch(i -> IntStream.range(blockCol, blockCol + 3)
-                        .anyMatch(j -> grid[i][j] == value));
+                        .anyMatch(j -> grid.get(i).get(j) == value));
     }
 
     public boolean isFull() {
-        return Arrays.stream(grid)
-                .allMatch(row -> Arrays.stream(row).allMatch(val -> val != 0));
+        return grid.stream().allMatch(row -> row.stream().noneMatch(val -> val == 0));
     }
 
     @Override
@@ -91,11 +91,10 @@ class SudokuGrid {
                 if (j % 3 == 0 && j != 0) {
                     sb.append("| ");
                 }
-                sb.append(grid[i][j] == 0 ? "  " : grid[i][j] + " ");
+                sb.append(grid.get(i).get(j) == 0 ? "  " : grid.get(i).get(j) + " ");
             }
             sb.append("\n");
         }
         return sb.toString();
     }
 }
-

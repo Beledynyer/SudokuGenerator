@@ -7,9 +7,13 @@ public class SudokuApp {
 
         System.out.println("Press Enter to generate a new Sudoku board (or 'q' to quit):");
         while (!scanner.nextLine().equalsIgnoreCase("q")) {
-            SudokuGrid grid = generator.generate();
-            System.out.println(grid);
-            System.out.println("Number of invalid boxes: " + countInvalidBoxes(grid));
+            try {
+                SudokuGrid grid = generator.generate();
+                System.out.println(grid);
+                System.out.println("Number of invalid boxes: " + countInvalidBoxes(grid));
+            } catch (RuntimeException e) {
+                System.out.println("Failed to generate a valid Sudoku grid: " + e.getMessage());
+            }
             System.out.println("\nPress Enter to generate another board (or 'q' to quit):");
         }
 
@@ -24,6 +28,7 @@ public class SudokuApp {
                 grid.setBoxValue(i, j, 0);
                 if (!grid.isValidPlacement(i, j, value).isValid()) {
                     invalidCount++;
+                    System.out.println(grid.isValidPlacement(i,j,value));
                 }
                 grid.setBoxValue(i, j, value);
             }

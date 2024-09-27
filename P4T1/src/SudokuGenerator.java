@@ -6,6 +6,7 @@ class SudokuGenerator {
     private static final int SIZE = 9;
     private final SudokuGrid grid;
     private final List<Set<Integer>> possibilities;
+    private final Random random;
 
     public SudokuGenerator() {
         grid = new SudokuGrid();
@@ -13,15 +14,40 @@ class SudokuGenerator {
         for (int i = 0; i < SIZE * SIZE; i++) {
             possibilities.add(IntStream.rangeClosed(1, 9).boxed().collect(Collectors.toSet()));
         }
+        random = new Random();
     }
 
     public SudokuGrid generate() {
+        int attempts = 0;
+        final int MAX_ATTEMPTS = 100;
+
+        //if failed attempt , WCF algo stops and restarts
+        // I said 100 max attempts, but you can set it to anything.
+        while (attempts < MAX_ATTEMPTS) {
+            if (tryGenerate()) {
+                return grid;
+            }
+            attempts++;
+        }
+
+        throw new RuntimeException("Failed to generate a valid Sudoku grid after " + MAX_ATTEMPTS + " attempts.");
+    }
+
+    /**
+     * This is the core of the Wave function collapse algorithm. It repeatedly:
+     * Finds the cell with the least possibilities
+     * Randomly chooses a value for that cell
+     * Updates the possibilities for affected cells
+     * @return
+     */
+    private boolean tryGenerate() {
         grid.clearAllBoxes();
+        resetPossibilities();
+
         while (!grid.isFull()) {
             int index = getIndexWithLeastPossibilities();
             if (index == -1 || possibilities.get(index).isEmpty()) {
-                // Impossible board, start over
-                return generate();
+                return false; // Impossible board, try again
             }
             int row = index / SIZE;
             int col = index % SIZE;
@@ -29,7 +55,15 @@ class SudokuGenerator {
             grid.setBoxValue(row, col, value);
             updatePossibilities(row, col, value);
         }
-        return grid;
+
+        return true;
+    }
+
+    private void resetPossibilities() {
+        possibilities.forEach(set -> {
+            set.clear();
+            set.addAll(IntStream.rangeClosed(1, 9).boxed().collect(Collectors.toSet()));
+        });
     }
 
     private int getIndexWithLeastPossibilities() {
@@ -42,7 +76,7 @@ class SudokuGenerator {
 
     private int getRandomValue(Set<Integer> possibleValues) {
         List<Integer> values = new ArrayList<>(possibleValues);
-        return values.get(new Random().nextInt(values.size()));
+        return values.get(random.nextInt(values.size()));
     }
 
     private void updatePossibilities(int row, int col, int value) {
